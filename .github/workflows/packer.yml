@@ -1,0 +1,78 @@
+name: Packer (AMI Baking)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'components/packer/phh-ami/**'
+      - 'components/packer/demo-ami/**'
+      - 'stacks/deploy/packer.yaml'
+      - '.github/workflows/packer.yml'
+
+env:
+  AWS_DEFAULT_REGION: ap-southeast-1
+  ATMOS_VERSION: "1.209.0"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: "1.11.0"
+          
+      - name: Install Atmos
+        run: |
+          curl -fsSL "https://github.com/cloudposse/atmos/releases/download/v${ATMOS_VERSION}/atmos_${ATMOS_VERSION}_linux_amd64" -o /usr/local/bin/atmos
+          sudo chmod +x /usr/local/bin/atmos
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          
+      - name: Validate
+        run: |
+          # Use demo-ami if it exists, otherwise fallback to phh-ami
+          AMI_DIR=$(ls -d components/packer/*-ami | head -n 1 | xargs basename)
+          echo "Using AMI component: $AMI_DIR"
+          atmos packer init $AMI_DIR -s packer
+          atmos packer validate $AMI_DIR -s packer
+
+  build:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: manual-approval  # Require manual action
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: "1.11.0"
+          
+      - name: Install Atmos
+        run: |
+          curl -fsSL "https://github.com/cloudposse/atmos/releases/download/v${ATMOS_VERSION}/atmos_${ATMOS_VERSION}_linux_amd64" -o /usr/local/bin/atmos
+          sudo chmod +x /usr/local/bin/atmos
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          
+      - name: Build
+        run: |
+          AMI_DIR=$(ls -d components/packer/*-ami | head -n 1 | xargs basename)
+          echo "Using AMI component: $AMI_DIR"
+          atmos packer init $AMI_DIR -s packer
+          atmos packer build $AMI_DIR -s packer

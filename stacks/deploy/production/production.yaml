@@ -1,0 +1,56 @@
+vars:
+  stage: prod
+
+
+
+components:
+  terraform:
+    compute:
+      backend_type: s3
+      backend:
+        s3:
+          bucket: "Demo-terraform-backend-storage"
+          use_lockfile: true
+
+          region: "ap-southeast-1"
+          key: "prod.tfstate"
+          encrypt: true
+      vars:
+        environment: "prod"
+        aws_id: "118955426917"
+        region: "ap-southeast-1"
+        vpc_id: "vpc-021c828751551e5dd"
+        alb_security_group_id: "sg-047c367904ee2a22a"
+        private_subnet_id: "subnet-0ca9159c1224ee220"
+        https_listener_arn: "arn:aws:elasticloadbalancing:ap-southeast-1:118955426917:listener/app/gitlab-ci-alb/9796095d0786f2e6/7b7b4a98c5783bdf"
+        frontend_domain_name: "www.myatminsoe.com"
+        backend_domain_name: "cms.myatminsoe.com"
+        codedeploy_app_name: "Demo-app"
+        deployment_group_name: "Demo-prod-deployment-group"
+        deploy_bucket_name: "Demo-prod-deploy-bucket"
+        storage_bucket_name: "Demo-prod-storage-bucket"
+        cicd_user_name: "Demo-cicd-prod-user"
+        instance_type: "t3a.small"
+        acm_arn: "arn:aws:acm:ap-southeast-1:118955426917:certificate/4364b001-f838-4a36-b51c-18fbbad7fe9b"
+        ecr_repository_names: ["prod-Demo-cms-frontend", "prod-Demo-cms-backend"]
+
+  ansible:
+    provisioning:
+      vars:
+        env_name: "prod"
+        install_nginx: true
+        install_docker: true
+        install_docker_compose: true
+        install_mysql_client: true
+        install_mysql_server: false
+      env:
+        ANSIBLE_HOST_KEY_CHECKING: "false"
+        ANSIBLE_FORCE_COLOR: "true"
+      settings:
+        ansible:
+          playbook: site.yml
+          inventory: inventory/prod.aws_ec2.yml
+
+
+
+

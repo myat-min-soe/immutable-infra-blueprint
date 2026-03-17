@@ -1,0 +1,57 @@
+# ==============================================================================
+# PACKER CHILD PIPELINE
+# ==============================================================================
+
+image: debian:bookworm-slim
+
+variables:
+  AWS_DEFAULT_REGION: ap-southeast-1
+  ATMOS_VERSION: "1.209.0"
+
+stages:
+  - validate
+  - build
+
+# ─── Install Tools ─────────────────────────────────────────────────────────────
+
+.install_packer_tools: &install_packer_tools
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends curl unzip ca-certificates
+    - rm -rf /var/lib/apt/lists/*
+    
+    # Install Packer
+    - curl -fsSL "https://releases.hashicorp.com/packer/1.11.0/packer_1.11.0_linux_amd64.zip" -o packer.zip
+    - unzip packer.zip -d /usr/local/bin/
+    - rm packer.zip
+    - packer version
+
+    # Install Atmos
+    - curl -fsSL "https://github.com/cloudposse/atmos/releases/download/v${ATMOS_VERSION}/atmos_${ATMOS_VERSION}_linux_amd64" -o /usr/local/bin/atmos
+    - chmod +x /usr/local/bin/atmos
+    - atmos version
+
+    # Setup AWS Credentials
+    - export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+    - export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    - export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+
+# ─── Validate ──────────────────────────────────────────────────────────────────
+
+validate:packer:
+  stage: validate
+  <<: *install_packer_tools
+  script:
+    - echo "🔍 Validating Base Packer build..."
+    - atmos packer init phh-ami -s packer
+    - atmos packer validate phh-ami -s packer
+
+# ─── Build ─────────────────────────────────────────────────────────────────────
+
+build:packer:
+  stage: build
+  <<: *install_packer_tools
+  script:
+    - echo "🚀 Building Base AMI (One Image for All Environments)..."
+    - atmos packer init phh-ami -s packer
+    - atmos packer build phh-ami -s packer
+  when: manual

@@ -1,0 +1,95 @@
+name: Ansible (Server Configuration)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to provision'
+        required: true
+        type: choice
+        options:
+          - develop
+          - uat
+          - preprod
+          - prod
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - provision
+          - verify
+
+env:
+  AWS_DEFAULT_REGION: ap-southeast-1
+  ATMOS_VERSION: "1.209.0"
+  ANSIBLE_VERSION: "11.5.0"
+  ANSIBLE_FORCE_COLOR: "true"
+  ANSIBLE_HOST_KEY_CHECKING: "false"
+
+jobs:
+  provision:
+    if: inputs.action == 'provision'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment == 'prod' && 'production' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Atmos
+        run: |
+          curl -fsSL "https://github.com/cloudposse/atmos/releases/download/v${ATMOS_VERSION}/atmos_${ATMOS_VERSION}_linux_amd64" -o /usr/local/bin/atmos
+          sudo chmod +x /usr/local/bin/atmos
+          
+      - name: Install Python & Ansible Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install --break-system-packages ansible==${ANSIBLE_VERSION} boto3 botocore
+          ansible-galaxy collection install community.aws amazon.aws
+          
+      - name: Install AWS Session Manager Plugin
+        run: |
+          curl -fsSL "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o session-manager-plugin.deb
+          sudo dpkg -i session-manager-plugin.deb
+          rm -f session-manager-plugin.deb
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          
+      - name: Provision
+        run: |
+          unset AWS_PROFILE
+          atmos ansible playbook provisioning -s ${{ inputs.environment }}
+          
+      - name: Show Versions
+        run: cat components/ansible/provisioning/versions/${{ inputs.environment }}_versions.json || true
+        
+      - name: Upload Versions Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.environment }}-versions
+          path: components/ansible/provisioning/versions/${{ inputs.environment }}_versions.json
+          retention-days: 30
+
+  verify:
+    if: inputs.action == 'verify'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Versions
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+          echo "Comparing package versions across environments based on repository files..."
+          for f in components/ansible/provisioning/versions/*_versions.json; do
+            if [ -f "$f" ]; then
+              env=$(jq -r '.environment' "$f")
+              echo "── ${env} ──"
+              jq -r '.packages | to_entries[] | "  \(.key): \(.value)"' "$f"
+            else
+              echo "No version files found."
+            fi
+          done

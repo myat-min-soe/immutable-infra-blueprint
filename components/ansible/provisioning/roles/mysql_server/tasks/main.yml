@@ -1,0 +1,37 @@
+---
+# MySQL Server Role - Verify and configure MySQL Server
+# Idempotent: checks if MySQL Server is already installed before proceeding
+# Only runs on dev/uat environments (preprod/prod use AWS RDS)
+
+- name: Check if MySQL Server is installed
+  command: dpkg-query -W -f='${Status}' mysql-server
+  register: mysqld_check
+  failed_when: false
+  changed_when: false
+
+- name: Assert MySQL Server is installed
+  assert:
+    that:
+      - mysqld_check.rc == 0
+    fail_msg: "MySQL Server is not installed. This AMI is invalid as it should be pre-baked."
+    success_msg: "MySQL Server is installed."
+
+# ── Configuration ──
+- name: Provide placeholder for environment-specific MySQL config
+  debug:
+    msg: "Apply environment specific my.cnf configuration here."
+
+- name: Ensure MySQL is enabled and started
+  systemd:
+    name: mysql
+    state: started
+    enabled: yes
+
+- name: Verify MySQL Server is running
+  command: systemctl is-active mysql
+  register: mysqld_status
+  changed_when: false
+
+- name: Display MySQL Server verification result
+  debug:
+    msg: "MySQL Server service status: {{ mysqld_status.stdout }}"

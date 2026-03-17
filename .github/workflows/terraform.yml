@@ -1,0 +1,120 @@
+name: Terraform (Infrastructure Provisioning)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy/manage'
+        required: true
+        type: choice
+        options:
+          - develop
+          - uat
+          - preprod
+          - prod
+      component:
+        description: 'Infrastructure Component'
+        required: true
+        type: choice
+        options:
+          - compute
+          - database
+      action:
+        description: 'Terraform Action'
+        required: true
+        type: choice
+        options:
+          - validate
+          - plan
+          - apply
+          - destroy
+
+env:
+  AWS_DEFAULT_REGION: ap-southeast-1
+  ATMOS_VERSION: "1.209.0"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+jobs:
+  tfsec:
+    if: inputs.action == 'plan' || inputs.action == 'validate'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: ./components/terraform
+          # Optional: add github token if you want PR comments
+          # github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  terraform_action:
+    runs-on: ubuntu-latest
+    # If tfsec runs, we depend on it. Otherwise we run immediately.
+    needs: [tfsec]
+    if: |
+      always() &&
+      (needs.tfsec.result == 'success' || needs.tfsec.result == 'skipped')
+    
+    # Require environment approval for apply to prod
+    environment: ${{ inputs.action == 'apply' && inputs.environment == 'prod' && 'production' || '' }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.0"
+          
+      - name: Install Atmos
+        run: |
+          curl -fsSL "https://github.com/cloudposse/atmos/releases/download/v${ATMOS_VERSION}/atmos_${ATMOS_VERSION}_linux_amd64" -o /usr/local/bin/atmos
+          sudo chmod +x /usr/local/bin/atmos
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          
+      - name: Determine Stack Name
+        id: set-stack
+        run: |
+          if [ "${{ inputs.component }}" = "database" ]; then
+            echo "STACK=db_${{ inputs.environment }}" >> $GITHUB_ENV
+          else
+            echo "STACK=${{ inputs.environment }}" >> $GITHUB_ENV
+          fi
+          
+      - name: Terraform Validate
+        if: inputs.action == 'validate'
+        run: atmos terraform validate ${{ inputs.component }} -s ${{ env.STACK }}
+        
+      - name: Terraform Plan
+        if: inputs.action == 'plan'
+        run: atmos terraform plan ${{ inputs.component }} -s ${{ env.STACK }} -- -out=terraform.tfplan
+        
+      - name: Upload TF Plan
+        if: inputs.action == 'plan'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ inputs.environment }}-${{ inputs.component }}
+          path: components/terraform/${{ inputs.component }}/terraform.tfplan
+          retention-days: 1
+          
+      - name: Download TF Plan
+        if: inputs.action == 'apply'
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ inputs.environment }}-${{ inputs.component }}
+          path: components/terraform/${{ inputs.component }}/
+          
+      - name: Terraform Apply
+        if: inputs.action == 'apply'
+        run: atmos terraform apply ${{ inputs.component }} -s ${{ env.STACK }} --planfile="terraform.tfplan"
+        
+      - name: Terraform Destroy
+        if: inputs.action == 'destroy'
+        run: atmos terraform destroy ${{ inputs.component }} -s ${{ env.STACK }} --auto-approve

@@ -1,0 +1,208 @@
+# ==============================================================================
+# TERRAFORM CHILD PIPELINE
+# ==============================================================================
+
+image: debian:bookworm-slim
+
+variables:
+  AWS_DEFAULT_REGION: ap-southeast-1
+  ATMOS_VERSION: "1.209.0"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .terraform/
+
+stages:
+  - security
+  - validate
+  - plan
+  - apply
+  - validate-db
+  - plan-db
+  - apply-db
+  - destroy
+
+# ─── Install Tools ─────────────────────────────────────────────────────────────
+
+.install_tf_tools: &install_tf_tools
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends curl jq bash unzip ca-certificates
+    - rm -rf /var/lib/apt/lists/*
+
+    # Install Terraform
+    - curl -fsSL "https://releases.hashicorp.com/terraform/1.12.0/terraform_1.12.0_linux_amd64.zip" -o terraform.zip
+    - unzip terraform.zip -d /usr/local/bin/
+    - rm terraform.zip
+
+    # Install Atmos
+    - curl -fsSL "https://github.com/cloudposse/atmos/releases/download/v${ATMOS_VERSION}/atmos_${ATMOS_VERSION}_linux_amd64" -o /usr/local/bin/atmos
+    - chmod +x /usr/local/bin/atmos
+
+    # Setup AWS Credentials
+    - export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+    - export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    - export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+
+# ─── Security ──────────────────────────────────────────────────────────────────
+tfsec:scan:
+  stage: security
+  script:
+    - apt-get update && apt-get install -y --no-install-recommends curl ca-certificates bash
+    - curl -s "https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh" | bash
+    - echo "🛡️ Running tfsec security scan..."
+    - tfsec ./components/terraform
+
+# ─── Compute (Validate/Plan/Apply) ─────────────────────────────────────────────
+
+validate:compute:
+  stage: validate
+  <<: *install_tf_tools
+  script:
+    - atmos validate stacks
+    - atmos terraform validate compute -s develop
+
+plan:develop:compute:
+  stage: plan
+  <<: *install_tf_tools
+  script:
+    - atmos terraform plan compute -s develop -- -out=terraform.tfplan
+  artifacts:
+    paths: [components/terraform/compute/terraform.tfplan]
+    expire_in: 1 day
+
+apply:develop:compute:
+  stage: apply
+  <<: *install_tf_tools
+  script:
+    - atmos terraform apply compute -s develop --planfile="terraform.tfplan"
+  dependencies: [plan:develop:compute]
+  when: manual
+
+plan:uat:compute:
+  stage: plan
+  <<: *install_tf_tools
+  script:
+    - atmos terraform plan compute -s uat -- -out=terraform.tfplan
+  artifacts:
+    paths: [components/terraform/compute/terraform.tfplan]
+    expire_in: 1 day
+
+apply:uat:compute:
+  stage: apply
+  <<: *install_tf_tools
+  script:
+    - atmos terraform apply compute -s uat --planfile="terraform.tfplan"
+  dependencies: [plan:uat:compute]
+  when: manual
+
+plan:preprod:compute:
+  stage: plan
+  <<: *install_tf_tools
+  script:
+    - atmos terraform plan compute -s preprod -- -out=terraform.tfplan
+  artifacts:
+    paths: [components/terraform/compute/terraform.tfplan]
+    expire_in: 1 day
+
+apply:preprod:compute:
+  stage: apply
+  <<: *install_tf_tools
+  script:
+    - atmos terraform apply compute -s preprod --planfile="terraform.tfplan"
+  dependencies: [plan:preprod:compute]
+  when: manual
+
+plan:prod:compute:
+  stage: plan
+  <<: *install_tf_tools
+  script:
+    - atmos terraform plan compute -s prod -- -out=terraform.tfplan
+  artifacts:
+    paths: [components/terraform/compute/terraform.tfplan]
+    expire_in: 1 day
+
+apply:prod:compute:
+  stage: apply
+  <<: *install_tf_tools
+  script:
+    - atmos terraform apply compute -s prod --planfile="terraform.tfplan"
+  dependencies: [plan:prod:compute]
+  environment:
+    name: production
+    url: https://www.punhlainghospitals.com
+  when: manual
+
+# ─── Database (Validate/Plan/Apply) (preprod & prod only) ──────────────────────
+
+validate:database:
+  stage: validate-db
+  <<: *install_tf_tools
+  script:
+    - atmos terraform validate database -s db_preprod
+
+plan:preprod:database:
+  stage: plan-db
+  <<: *install_tf_tools
+  script:
+    - atmos terraform plan database -s db_preprod -- -out=terraform.tfplan
+  artifacts:
+    paths: [components/terraform/database/terraform.tfplan]
+    expire_in: 1 day
+
+apply:preprod:database:
+  stage: apply-db
+  <<: *install_tf_tools
+  script:
+    - atmos terraform apply database -s db_preprod --planfile="terraform.tfplan"
+  dependencies: [plan:preprod:database]
+  when: manual
+
+plan:prod:database:
+  stage: plan-db
+  <<: *install_tf_tools
+  script:
+    - atmos terraform plan database -s db_prod -- -out=terraform.tfplan
+  artifacts:
+    paths: [components/terraform/database/terraform.tfplan]
+    expire_in: 1 day
+
+apply:prod:database:
+  stage: apply-db
+  <<: *install_tf_tools
+  script:
+    - atmos terraform apply database -s db_prod --planfile="terraform.tfplan"
+  dependencies: [plan:prod:database]
+  when: manual
+
+# ─── Destroy (Manual Only) ─────────────────────────────────────────────────────
+
+destroy:develop:compute:
+  stage: destroy
+  <<: *install_tf_tools
+  script:
+    - atmos terraform destroy compute -s develop --auto-approve
+  when: manual
+
+destroy:uat:compute:
+  stage: destroy
+  <<: *install_tf_tools
+  script:
+    - atmos terraform destroy compute -s uat --auto-approve
+  when: manual
+
+destroy:preprod:compute:
+  stage: destroy
+  <<: *install_tf_tools
+  script:
+    - atmos terraform destroy compute -s preprod --auto-approve
+  when: manual
+
+destroy:prod:compute:
+  stage: destroy
+  <<: *install_tf_tools
+  script:
+    - atmos terraform destroy compute -s prod --auto-approve
+  when: manual

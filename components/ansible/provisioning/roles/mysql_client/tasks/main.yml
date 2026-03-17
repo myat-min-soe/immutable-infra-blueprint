@@ -1,0 +1,26 @@
+---
+# MySQL Client Role - Verify MySQL client for RDS connectivity is installed
+# Idempotent: checks if MySQL client is already installed before proceeding
+
+- name: Check if MySQL client is installed
+  command: dpkg-query -W -f='${Status}' mysql-client
+  register: mysql_check
+  failed_when: false
+  changed_when: false
+
+- name: Assert MySQL client is installed
+  assert:
+    that:
+      - mysql_check.rc == 0
+    fail_msg: "MySQL client is not installed. This AMI is invalid as it should be pre-baked."
+    success_msg: "MySQL client is installed."
+
+# ── Verification ──
+- name: Verify MySQL client is working
+  command: mysql --version
+  register: mysql_final
+  changed_when: false
+
+- name: Display MySQL client verification result
+  debug:
+    msg: "MySQL client installed: {{ mysql_final.stdout }}"

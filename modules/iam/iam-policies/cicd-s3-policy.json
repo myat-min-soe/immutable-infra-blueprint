@@ -1,0 +1,37 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "${deploy_bucket_arn}/packages/*",
+        "${deploy_bucket_arn}/orangeplay/*",
+        "${deploy_bucket_arn}/uat-packages/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "${deploy_bucket_arn}"
+      ],
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "packages/*",
+            "orangeplay/*",
+            "uat-packages/*"
+          ]
+        }
+      }
+    }
+  ]
+}

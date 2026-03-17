@@ -1,0 +1,47 @@
+---
+# Nginx Role - Verify Nginx proxy is installed and apply configs
+# Idempotent: checks if Nginx is already installed before proceeding
+
+- name: Check if Nginx is installed
+  command: dpkg-query -W -f='${Status}' nginx
+  register: nginx_check
+  failed_when: false
+  changed_when: false
+
+- name: Assert Nginx is installed
+  assert:
+    that:
+      - nginx_check.rc == 0
+    fail_msg: "Nginx is not installed. This AMI is invalid as it should be pre-baked."
+    success_msg: "Nginx is installed."
+
+# ── Configuration ──
+- name: Remove default Nginx site configuration
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Restart Nginx
+
+- name: Deploy environment-specific site1.conf
+  template:
+    src: site1.conf.j2
+    dest: /etc/nginx/conf.d/site1.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Nginx
+
+- name: Ensure Nginx is enabled and started
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Verify Nginx is running
+  command: systemctl is-active nginx
+  register: nginx_status
+  changed_when: false
+
+- name: Display Nginx verification result
+  debug:
+    msg: "Nginx service status: {{ nginx_status.stdout }}"

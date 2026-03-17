@@ -1,0 +1,25 @@
+vars:
+  stage: production_base
+
+components:
+  terraform:
+    base:
+      backend_type: s3
+      backend:
+        s3:
+          bucket: "Demo-terraform-backend-storage"
+          use_lockfile: true
+          region: "ap-southeast-1"
+          key: "production_base.tfstate"
+          encrypt: true
+      vars:
+        environment: "production"
+        aws_id: "xxxxxxxxxxxxxxxxx"
+        region: "ap-southeast-1"
+        vpc_name: "production-vpc"
+        vpc_cidr: "10.3.0.0/16"
+        create_nat: true
+        azs: ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]
+        public_subnet_cidr: ["10.3.1.0/24", "10.3.2.0/24", "10.3.3.0/24"]
+        private_subnet_cidr: ["10.3.4.0/24", "10.3.5.0/24", "10.3.6.0/24"]
+        acm_arn: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

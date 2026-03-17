@@ -1,0 +1,55 @@
+---
+# Version Report Role - Collect and store installed package versions
+# Always runs after all other roles to capture the current state
+# Saves a JSON report to the server and fetches it locally for version control
+
+- name: Collect installed package versions
+  shell: |
+    dpkg-query -W -f='${Package}=${Version}\n' \
+      nginx \
+      docker-ce \
+      docker-ce-cli \
+      containerd.io \
+      docker-compose-plugin \
+      mysql-client \
+      mysql-server \
+      2>/dev/null || true
+  register: package_versions
+  changed_when: false
+
+- name: Build version report
+  set_fact:
+    version_report:
+      environment: "{{ env_name | default('unknown') }}"
+      instance_id: "{{ inventory_hostname }}"
+      timestamp: "{{ ansible_facts['date_time']['iso8601'] }}"
+      packages: >-
+        {{
+          dict(
+            package_versions.stdout_lines
+            | select('match', '.+=.+')
+            | map('split', '=', 1)
+          )
+        }}
+
+- name: Display version report
+  debug:
+    msg: "{{ version_report | to_nice_json }}"
+
+- name: Ensure /opt/Demo directory exists
+  file:
+    path: /opt/Demo
+    state: directory
+    mode: "0755"
+
+- name: Save version report to server
+  copy:
+    content: "{{ version_report | to_nice_json }}\n"
+    dest: /opt/Demo/versions.json
+    mode: "0644"
+
+- name: Fetch version report to local
+  fetch:
+    src: /opt/Demo/versions.json
+    dest: "versions/{{ env_name | default('unknown') }}_versions.json"
+    flat: yes
