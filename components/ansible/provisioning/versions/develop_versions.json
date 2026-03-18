@@ -1,6 +1,6 @@
 {
     "environment": "develop",
-    "instance_id": "i-08baaae4cfbf8fc34",
+    "instance_id": "i-xxxxxxxxxxxxxxx",
     "packages": {
         "containerd.io": "2.2.2-1~ubuntu.24.04~noble",
         "docker-ce": "5:29.3.0-1~ubuntu.24.04~noble",
