@@ -1,10 +1,10 @@
-data "aws_ami" "Demo_ami" {
+data "aws_ami" "ami" {
   most_recent = true
   owners      = ["self"]
 
   filter {
     name   = "tag:Name"
-    values = ["Demo-base-image"]
+    values = ["base-image"]
   }
 
   filter {
@@ -14,7 +14,7 @@ data "aws_ami" "Demo_ami" {
 }
 
 resource "aws_instance" "this" {
-  ami                           = var.ami_id != "" ? var.ami_id : data.aws_ami.Demo_ami.id
+  ami                           = var.ami_id != "" ? var.ami_id : data.aws_ami.ami.id
   instance_type                 = var.instance_type
   subnet_id                     = var.private_subnet_id
   iam_instance_profile          = var.iam_instance_profile
@@ -34,7 +34,7 @@ resource "aws_instance" "this" {
      create_before_destroy = true
    }
   tags = {
-    Name = "Demo-${var.environment}-Instance"
+    Name = "${var.environment}-instance"
     inplace = "true"
   }
 }

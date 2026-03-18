@@ -96,7 +96,6 @@ provision:prod:
     expire_in: 30 days
   environment:
     name: production
-    url: https://www.punhlainghospitals.com
   when: manual
 
 # ─── Verify ────────────────────────────────────────────────────────────────────

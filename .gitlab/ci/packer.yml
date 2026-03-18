@@ -42,8 +42,8 @@ validate:packer:
   <<: *install_packer_tools
   script:
     - echo "🔍 Validating Base Packer build..."
-    - atmos packer init phh-ami -s packer
-    - atmos packer validate phh-ami -s packer
+    - atmos packer init ami -s packer
+    - atmos packer validate ami -s packer
 
 # ─── Build ─────────────────────────────────────────────────────────────────────
 
@@ -52,6 +52,6 @@ build:packer:
   <<: *install_packer_tools
   script:
     - echo "🚀 Building Base AMI (One Image for All Environments)..."
-    - atmos packer init phh-ami -s packer
-    - atmos packer build phh-ami -s packer
+    - atmos packer init ami -s packer
+    - atmos packer build ami -s packer
   when: manual

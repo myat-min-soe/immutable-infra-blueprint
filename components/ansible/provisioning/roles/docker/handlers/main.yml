@@ -1,5 +1,3 @@
 ---
-- name: Restart Docker
-  systemd:
-    name: docker
-    state: restarted
+# No handlers needed for the docker role.
+# The role only verifies Docker is installed and running — no config changes that require a restart.

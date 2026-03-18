@@ -6,8 +6,7 @@ on:
     branches:
       - develop
     paths:
-      - 'components/packer/phh-ami/**'
-      - 'components/packer/demo-ami/**'
+      - 'components/packer/ami/**'
       - 'stacks/deploy/packer.yaml'
       - '.github/workflows/packer.yml'
 
@@ -40,7 +39,7 @@ jobs:
           
       - name: Validate
         run: |
-          # Use demo-ami if it exists, otherwise fallback to phh-ami
+          # Use -ami if it exists, otherwise fallback to ami
           AMI_DIR=$(ls -d components/packer/*-ami | head -n 1 | xargs basename)
           echo "Using AMI component: $AMI_DIR"
           atmos packer init $AMI_DIR -s packer

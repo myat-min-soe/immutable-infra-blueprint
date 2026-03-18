@@ -132,7 +132,6 @@ apply:prod:compute:
   dependencies: [plan:prod:compute]
   environment:
     name: production
-    url: https://www.punhlainghospitals.com
   when: manual
 
 # ─── Database (Validate/Plan/Apply) (preprod & prod only) ──────────────────────

@@ -1,6 +1,6 @@
 locals {
   metadata = {
-    "owner"                  = "Onenex"
+    "owner"                  = "MMS"
     "env"                    = "${var.environment}-env"
     "managed-by"             = "Terraform"
   }

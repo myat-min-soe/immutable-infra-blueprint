@@ -1,0 +1,40 @@
+import:
+  - catalog/base/defaults
+  - catalog/compute/defaults
+  - catalog/ansible/defaults
+  - mixins/region/ap-southeast-1
+  - mixins/stage/uat
+
+vars:
+  aws_id: "xxxxxxxxxxxxxx"
+
+
+
+components:
+  terraform:
+    base:
+      vars:
+        vpc_name: "uat-vpc"
+        vpc_cidr: "10.1.0.0/16"
+        public_subnet_cidr: ["10.1.1.0/24", "10.1.2.0/24", "10.1.3.0/24"]
+        private_subnet_cidr: ["10.1.4.0/24", "10.1.5.0/24", "10.1.6.0/24", "10.1.7.0/24", "10.1.8.0/24", "10.1.9.0/24" ]
+        acm_arn: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+    compute:
+      vars:
+        domain_name: "uat.example.com"
+        codedeploy_app_name: "uat-app"
+        deployment_group_name: "uat-deployment-group"
+        deploy_bucket_name: "uat-deploy-bucket"
+        storage_bucket_name: "uat-storage-bucket"
+        cicd_user_name: "cicd-uat-user"
+
+
+  ansible:
+    provisioning:
+      vars:
+        env_name: "uat"
+      env:
+        EC2_TAG_FILTER: "uat-instance"
+        SSM_BUCKET_NAME: "uat-storage-bucket-xxxxxxxxxxx"
+        START_MYSQL_SERVER: "true"

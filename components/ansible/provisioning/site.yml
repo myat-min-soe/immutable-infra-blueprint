@@ -1,78 +1,47 @@
 ---
-# Demo Server Provisioning Playbook
-# All package installations are controlled via boolean flags from stack YAML files
-# Idempotent: each role checks if software is already installed before proceeding
+# Server Provisioning Playbook
+# Packages are pre-baked into the AMI by Packer.
+# Ansible verifies services are running and applies configuration only.
 
-- name: Demo Server Provisioning
+- name: Server Provisioning
   hosts: all
   become: yes
   gather_facts: yes
 
   pre_tasks:
-    - name: Update APT cache
-      apt:
-        update_cache: yes
-
-    - name: Upgrade all packages
-      apt:
-        upgrade: dist
-      register: apt_upgrade
-
-    - name: Display upgrade result
-      debug:
-        msg: "{{ 'Packages were upgraded.' if apt_upgrade.changed else 'All packages are already up to date.' }}"
-
     - name: Display provisioning target
       debug:
         msg: "Provisioning {{ inventory_hostname }} ({{ env_name | default('unknown') }} environment)"
 
-    - name: Display package configuration
+    - name: Display environment config
       debug:
         msg: |
-          Package installation flags:
-            install_nginx:          {{ install_nginx | default(false) }}
-            install_docker:         {{ install_docker | default(false) }}
-            install_docker_compose: {{ install_docker_compose | default(false) }}
-            install_mysql_client:   {{ install_mysql_client | default(false) }}
-            install_mysql_server:   {{ install_mysql_server | default(false) }}
+          Environment: {{ env_name | default('unknown') }}
+          install_mysql_server: {{ install_mysql_server | default(false) }}
 
   roles:
     - role: nginx
       tags: [nginx]
-      when: install_nginx | default(false) | bool
 
     - role: docker
       tags: [docker]
-      when: install_docker | default(false) | bool
 
     - role: docker_compose
       tags: [docker-compose]
-      when: install_docker_compose | default(false) | bool
 
     - role: mysql_client
       tags: [mysql-client]
-      when: install_mysql_client | default(false) | bool
 
     - role: mysql_server
       tags: [mysql-server]
-      when: install_mysql_server | default(false) | bool
 
     - role: version_report
       tags: [version-report]
 
   post_tasks:
     - name: Provisioning Summary
-      vars:
-        installed_packages: >-
-          {{
-            ([ 'nginx' ] if (install_nginx | default(false) | bool) else []) +
-            ([ 'docker' ] if (install_docker | default(false) | bool) else []) +
-            ([ 'docker_compose' ] if (install_docker_compose | default(false) | bool) else []) +
-            ([ 'mysql_client' ] if (install_mysql_client | default(false) | bool) else []) +
-            ([ 'mysql_server' ] if (install_mysql_server | default(false) | bool) else [])
-          }}
       debug:
         msg: |
           ✅ Provisioning complete for {{ inventory_hostname }}
           Environment: {{ env_name | default('unknown') }}
-          Packages: {{ installed_packages | join(', ') }}
+          MySQL Server: {{ 'enabled' if (lookup('env', 'START_MYSQL_SERVER') | default('false', true) | bool) else 'disabled (using RDS)' }}

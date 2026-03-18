@@ -6,7 +6,7 @@ upstream backend_app {
 
 server {
     listen 80;
-    server_name {{ env_name }}.myatminsoe.com;
+    server_name {{ env_name }}.example.com;
 
     access_log /var/log/nginx/{{ env_name }}_site1_access.log;
     error_log /var/log/nginx/{{ env_name }}_site1_error.log;

@@ -43,30 +43,7 @@ variable "storage_type" {
   description = "database storage type"
   type        = string
 }
-#ingress
-variable "postgre_sg_ingress_rules" {
-  description = "Ingress Rules"
-  type = list(object({
-    from_port   = number
-    to_port     = number
-    protocol    = string
-    cidr_blocks = string
-    description = string
-  }))
-  default = []
-}
-#egress
-variable "postgre_sg_egress_rules" {
-  description = "Egress Rules"
-  type = list(object({
-    from_port   = number
-    to_port     = number
-    protocol    = string
-    cidr_blocks = string
-    description = string
-  }))
-  default = []
-}
+
 variable "region" {
   description = "aws region"
   type = string

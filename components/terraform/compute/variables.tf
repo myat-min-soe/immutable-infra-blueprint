@@ -13,16 +13,12 @@ variable "environment" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "ID of the VPC"
+variable "stage" {
+  description = "The stage in which the resources are deployed"
   type        = string
 }
 
-variable "alb_security_group_id" {
-  description = "Security group ID of the ALB"
-  type        = string
-  default     = ""
-}
+
 
 
 
@@ -41,7 +37,7 @@ variable "deployment_group_name" {
 variable "alert_email" {
   description = "Email address for CloudWatch alerts"
   type        = string
-  default     = "orangeplayapps@gmail.com"
+  default     = ""
 }
 
 
@@ -62,14 +58,6 @@ variable "cicd_user_name" {
   default     = ""
 }
 
-variable "acm_arn" {
-  description = "ACM Certificate ARN for HTTPS"
-  type        = string
-}
-
-
-
-
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
@@ -82,11 +70,7 @@ variable "security_group_id" {
   default     = ""
 }
 
-variable "private_subnet_id" {
-  description = "Subnet ID where the instance will be launched"
-  type        = string
-  default     = ""
-}
+
 
 variable "iam_instance_profile" {
   description = "IAM instance profile name to attach to the EC2 instance"
@@ -99,11 +83,7 @@ variable "disable_api_termination" {
   default     = false
 }
 
-variable "https_listener_arn" {
-  type        = string
-  description = "The ARN of the HTTPS listener"
-  default     = ""  
-}
+
 
 variable "priority" {
   type        = number
@@ -117,17 +97,12 @@ variable "target_group_arn" {
   default     = ""
 }
 
-variable "frontend_domain_name" {
+variable "domain_name" {
   type        = string
   description = "The frontend domain name to match"
   default     = ""
 }   
 
-variable "backend_domain_name" {
-  type        = string
-  description = "The backend domain name to match"
-  default     = ""
-}
 
 variable "instance_id" {
   type        = string
@@ -141,8 +116,8 @@ variable "instance_name" {
   default     = ""
 }
 
-variable "ecr_repository_names" {
-  description = "List of ECR repository names to create"
-  type        = list(string)
-  default     = ["Demo-cms-frontend", "Demo-cms-backend"]
+variable "ecr_repository_name" {
+  description = "Name of the ECR repository to create"
+  type        = string
+  default     = ""
 }

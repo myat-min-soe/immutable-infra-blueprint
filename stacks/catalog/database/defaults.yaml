@@ -1,0 +1,25 @@
+components:
+  terraform:
+    database:
+      settings:
+        validation:
+          - schema_type: "opa"
+            schema_path: "database.rego"
+      backend_type: s3
+      backend:
+        s3:
+          bucket: "terraform-backend-storage"
+          use_lockfile: true
+          region: "ap-southeast-1"
+          encrypt: true
+          key: "terraform.tfstate"
+          workspace_key_prefix: "database"
+      vars:
+        parameter_group_family: "mysql8.0"
+        engine: "mysql"
+        engine_version: "8.0"
+        instance_class: "db.t3.micro"
+        storage_type: "gp2"
+        multi_az: false
+        allocated_storage: 20
+        max_allocated_storage: 100

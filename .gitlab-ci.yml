@@ -1,5 +1,5 @@
 # ==============================================================================
-# Demo Infrastructure CI/CD Pipeline (PARENT ROUTER)
+#  Infrastructure CI/CD Pipeline (PARENT ROUTER)
 # ==============================================================================
 # This is a Parent-Child pipeline architecture. 
 # You can manually trigger specific infrastructure components below.
@@ -22,7 +22,7 @@ packer-pipeline:
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
       changes:
-        - components/packer/phh-ami/**/*
+        - components/packer/ami/**/*
         - stacks/deploy/packer.yaml
         - .gitlab/ci/packer.yml
       when: manual

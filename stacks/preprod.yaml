@@ -1,0 +1,40 @@
+import:
+  - catalog/base/defaults
+  - catalog/compute/defaults
+  - catalog/ansible/defaults
+  - mixins/region/ap-southeast-1
+  - mixins/stage/preprod
+
+vars:
+  aws_id: "xxxxxxxxxxxxxx"
+
+
+
+components:
+  terraform:
+    base:
+      vars:
+        vpc_name: "preprod-vpc"
+        vpc_cidr: "10.2.0.0/16"
+        public_subnet_cidr: ["10.2.1.0/24", "10.2.2.0/24", "10.2.3.0/24"]
+        private_subnet_cidr: ["10.2.4.0/24", "10.2.5.0/24", "10.2.6.0/24", "10.2.7.0/24", "10.2.8.0/24", "10.2.9.0/24" ]
+        acm_arn: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+    compute:
+      vars:
+        domain_name: "preprod.example.com"
+        codedeploy_app_name: "preprod-app"
+        deployment_group_name: "preprod-deployment-group"
+        deploy_bucket_name: "preprod-deploy-bucket"
+        storage_bucket_name: "preprod-storage-bucket"
+        cicd_user_name: "cicd-preprod-user"
+
+
+  ansible:
+    provisioning:
+      vars:
+        env_name: "preprod"
+      env:
+        EC2_TAG_FILTER: "preprod-instance"
+        SSM_BUCKET_NAME: "preprod-storage-bucket-xxxxxxxxxxx"
+        START_MYSQL_SERVER: "false"

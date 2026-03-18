@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "vars": {
+      "type": "object",
+      "properties": {
+        "instance_type": {
+          "type": "string",
+          "enum": [
+            "t2.micro",
+            "t3.micro",
+            "t3a.small",
+            "t3.small",
+            "t3a.medium",
+            "t3.medium",
+            "t3a.large"
+          ],
+          "description": "The EC2 instance type for the compute cluster."
+        }
+      },
+      "required": ["instance_type"]
+    }
+  }
+}

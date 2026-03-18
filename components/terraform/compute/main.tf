@@ -1,3 +1,13 @@
+data "terraform_remote_state" "base" {
+  backend = "s3"
+  
+  config = {
+    bucket = "demo-terraform-backend-storage-mms"
+    region = var.region
+    key    = "base/${var.environment}/terraform.tfstate"
+  }
+}
+
 # IAM Module
 module "iam" {
   source = "../../../modules/iam"
@@ -9,15 +19,6 @@ module "iam" {
   cicd_user_name          = var.cicd_user_name
 }
 
-# Security Module
-module "security" {
-  source = "../../../modules/security"
-
-  environment     = var.environment
-  vpc_id          = var.vpc_id
-  alb_security_group_id = var.alb_security_group_id
-}
-
 
 #Instance Compute Module
 
@@ -25,42 +26,35 @@ module "compute" {
   source = "../../../modules/instances"
 
   instance_type             = var.instance_type
-  security_group_id         = module.security.app_security_group_id
-  private_subnet_id         = var.private_subnet_id
+  security_group_id         = data.terraform_remote_state.base.outputs.app_common_security_group_id
+  private_subnet_id         = data.terraform_remote_state.base.outputs.private_subnet_ids[0]
   iam_instance_profile      = module.iam.ec2_instance_profile_name
   environment               = var.environment
 }
 
 module "targetgroup" {
   source   = "../../../modules/loadbalancer/target_group"
-  tg_name  = "Demo-${var.environment}-app-tg"
-  vpc_id   = var.vpc_id
+  tg_name  = "${var.environment}-app-tg"
+  vpc_id   = data.terraform_remote_state.base.outputs.vpc_id
   instance_id = module.compute.instance_id
 }
 
-module "frontend_listeners" {
+module "listeners" {
   source = "../../../modules/loadbalancer/listener_rule"
 
-  https_listener_arn    = var.https_listener_arn
+  https_listener_arn    = data.terraform_remote_state.base.outputs.https_listener_arn
   target_group_arn      = module.targetgroup.target_group_arn
-  domain_name          = var.frontend_domain_name
+  domain_name          = var.domain_name
   priority             = 5
 }
 
-module "backend_listeners" {
-  source = "../../../modules/loadbalancer/listener_rule"
-
-  https_listener_arn     = var.https_listener_arn
-  target_group_arn      = module.targetgroup.target_group_arn
-  domain_name          = var.backend_domain_name
-  priority             = 6
-} 
 
 # Storage Module
 module "storage" {
   source                    = "../../../modules/storage"
   storage_bucket_name       = var.storage_bucket_name
   environment               = var.environment
+  aws_id                    = var.aws_id
 }
 
 
@@ -74,12 +68,13 @@ module "codedeploy" {
   deploy_bucket_name        = var.deploy_bucket_name
   instance_name             = module.compute.instance_name
   environment               = var.environment
+  aws_id                    = var.aws_id
 }
 
 # ECR Module
 module "ecr" {
   source = "../../../modules/ecr"
 
-  repository_names = var.ecr_repository_names
+  repository_name = var.ecr_repository_name
   environment      = var.environment
 }

@@ -38,7 +38,7 @@ output "target_group_name" {
   value       = module.targetgroup.target_group_name
 }
 
-output "ecr_repository_urls" {
-  description = "Map of ECR repository names to their URLs"
-  value       = module.ecr.repository_urls
+output "ecr_repository_url" {
+  description = "The URL of the ECR repository"
+  value       = module.ecr.repository_url
 }

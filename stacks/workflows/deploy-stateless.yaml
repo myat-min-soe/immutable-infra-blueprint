@@ -1,0 +1,16 @@
+workflows:
+  deploy-stateless:
+    description: Sequentially deploy the foundation and compute layers (no database) for a given environment.
+
+    steps:
+      - name: Validating terraform layers
+        command: terraform validate base
+
+      - name: Applying the networking base layer
+        command: terraform apply base -auto-approve
+
+      - name: Applying the stateless compute layer
+        command: terraform apply compute -auto-approve
+
+      - name: Running Ansible Provisioning
+        command: ansible playbook provisioning

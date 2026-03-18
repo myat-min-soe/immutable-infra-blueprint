@@ -1,0 +1,19 @@
+components:
+  terraform:
+    compute:
+      settings:
+        validation:
+          - schema_type: "jsonschema"
+            schema_path: "compute.json"
+      backend_type: s3
+      backend:
+        s3:
+          bucket: "demo-terraform-backend-storage-mms"
+          use_lockfile: true
+          region: "ap-southeast-1"
+          encrypt: true
+          key: "terraform.tfstate"
+          workspace_key_prefix: "compute"
+      vars:
+        ecr_repository_name: "app"
+        instance_type: "t3a.small"

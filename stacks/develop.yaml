@@ -1,0 +1,38 @@
+import:
+  - catalog/base/defaults
+  - catalog/compute/defaults
+  - catalog/ansible/defaults
+  - mixins/region/ap-southeast-1
+  - mixins/stage/develop
+
+vars:
+  aws_id: "xxxxxxxxxxxxxx"
+
+components:
+  terraform:
+    base:
+      vars:
+        vpc_name: "develop-vpc"
+        vpc_cidr: "10.0.0.0/16"
+        public_subnet_cidr: ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+        private_subnet_cidr: ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24", "10.0.7.0/24", "10.0.8.0/24", "10.0.9.0/24" ]
+        acm_arn: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+    compute:
+      vars:
+        domain_name: "develop.example.com"
+        codedeploy_app_name: "develop-app"
+        deployment_group_name: "develop-deployment-group"
+        deploy_bucket_name: "develop-deploy-bucket"
+        storage_bucket_name: "develop-storage-bucket"
+        cicd_user_name: "cicd-develop-user"
+
+
+  ansible:
+    provisioning:
+      vars:
+        env_name: "develop"
+      env:
+        EC2_TAG_FILTER: "develop-instance"
+        SSM_BUCKET_NAME: "develop-storage-bucket-xxxxxxxxxxx"
+        START_MYSQL_SERVER: "true"

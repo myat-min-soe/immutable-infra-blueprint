@@ -1,10 +1,10 @@
 # S3 Bucket for deployments
 # tfsec:ignore:aws-s3-enable-versioning
 resource "aws_s3_bucket" "deploy_bucket" {
-  bucket = var.deploy_bucket_name
+  bucket = "${var.deploy_bucket_name}-${var.aws_id}"
 
   tags = {
-    Name = var.deploy_bucket_name
+    Name = "${var.deploy_bucket_name}-${var.aws_id}"
   }
 }
 
@@ -13,14 +13,10 @@ resource "aws_kms_key" "deploy_bucket_key" {
   description             = "KMS key for Deploy S3 bucket encryption"
   deletion_window_in_days = 7
   enable_key_rotation     = true
-
-  tags = {
-    Name = "Demo-${var.environment}-deploy-bucket-key"
-  }
 }
 
 resource "aws_kms_alias" "deploy_bucket_key_alias" {
-  name          = "alias/Demo-${var.environment}-deploy-bucket-key"
+  name          = "alias/${var.environment}-deploy-bucket-key"
   target_key_id = aws_kms_key.deploy_bucket_key.key_id
 }
 

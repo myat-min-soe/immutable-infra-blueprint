@@ -1,0 +1,15 @@
+components:
+  terraform:
+    base:
+      backend_type: s3
+      backend:
+        s3:
+          bucket: "demo-terraform-backend-storage-mms"
+          use_lockfile: true
+          region: "ap-southeast-1"
+          encrypt: true
+          key: "terraform.tfstate"
+          workspace_key_prefix: "base"
+      vars:
+        create_nat: true
+        azs: ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]

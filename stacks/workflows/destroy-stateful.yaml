@@ -1,0 +1,13 @@
+workflows:
+  destroy-stateful:
+    description: Sequentially destroy a stateful environment by tearing down dependencies in the correct reverse order.
+
+    steps:
+      - name: Destroying the stateless compute layer
+        command: terraform destroy compute -auto-approve
+
+      - name: Destroying the database stateful layer
+        command: terraform destroy database -auto-approve
+
+      - name: Destroying the networking base layer
+        command: terraform destroy base -auto-approve

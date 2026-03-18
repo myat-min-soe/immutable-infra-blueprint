@@ -1,8 +1,6 @@
 # ECR Repositories
-resource "aws_ecr_repository" "repositories" {
-  for_each = toset(var.repository_names)
-
-  name                 = each.value
+resource "aws_ecr_repository" "repository" {
+  name                 = var.repository_name
   image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
@@ -15,15 +13,14 @@ resource "aws_ecr_repository" "repositories" {
   }
 
   tags = {
-    Name        = each.value
+    Name        = var.repository_name
     Environment = var.environment
   }
 }
 
 # Lifecycle Policy - keep only recent images
-resource "aws_ecr_lifecycle_policy" "repositories" {
-  for_each   = aws_ecr_repository.repositories
-  repository = each.value.name
+resource "aws_ecr_lifecycle_policy" "repository" {
+  repository = aws_ecr_repository.repository.name
 
   policy = jsonencode({
     rules = [

@@ -1,9 +1,9 @@
 # tfsec:ignore:aws-s3-enable-versioning
 resource "aws_s3_bucket" "storage" {
-  bucket = var.storage_bucket_name
+  bucket = "${var.storage_bucket_name}-${var.aws_id}"
 
   tags = {
-    Name = var.storage_bucket_name
+    Name = "${var.storage_bucket_name}-${var.aws_id}"
   }
 }
 
@@ -14,14 +14,10 @@ resource "aws_kms_key" "storage_bucket_key" {
   description             = "KMS key for Storage S3 bucket encryption"
   deletion_window_in_days = 7
   enable_key_rotation     = true
-
-  tags = {
-    Name = "Demo-${var.environment}-storage-bucket-key"
-  }
 }
 
 resource "aws_kms_alias" "storage_bucket_key_alias" {
-  name          = "alias/Demo-${var.environment}-storage-bucket-key"
+  name          = "alias/${var.environment}-storage-bucket-key"
   target_key_id = aws_kms_key.storage_bucket_key.key_id
 }
 

@@ -36,20 +36,20 @@
   debug:
     msg: "{{ version_report | to_nice_json }}"
 
-- name: Ensure /opt/Demo directory exists
+- name: Ensure /opt/ directory exists
   file:
-    path: /opt/Demo
+    path: /opt/
     state: directory
     mode: "0755"
 
 - name: Save version report to server
   copy:
     content: "{{ version_report | to_nice_json }}\n"
-    dest: /opt/Demo/versions.json
+    dest: /opt/versions.json
     mode: "0644"
 
 - name: Fetch version report to local
   fetch:
-    src: /opt/Demo/versions.json
+    src: /opt/versions.json
     dest: "versions/{{ env_name | default('unknown') }}_versions.json"
     flat: yes

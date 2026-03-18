@@ -28,7 +28,7 @@
         "ssm:GetParameter"
       ],
       "Resource": [
-        "arn:aws:ssm:${aws_region}:*:parameter/apiserver/prod/*"
+        "arn:aws:ssm:${aws_region}:*:parameter/*"
       ]
     },
     {

@@ -29,3 +29,8 @@ variable "instance_name" {
   type        = string
   default     = ""
 }
+
+variable "aws_id" {
+  description = "AWS account ID"
+  type        = string
+}

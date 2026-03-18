@@ -1,0 +1,3 @@
+vars:
+  stage: production
+  environment: production

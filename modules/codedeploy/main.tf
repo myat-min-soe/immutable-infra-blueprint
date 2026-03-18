@@ -1,6 +1,10 @@
+resource "aws_codedeploy_app" "this" {
+  name             = var.codedeploy_app_name
+  compute_platform = "Server"
+}
 
 resource "aws_codedeploy_deployment_group" "this" {
-  app_name              = var.codedeploy_app_name
+  app_name              = aws_codedeploy_app.this.name
   deployment_group_name = var.deployment_group_name
   service_role_arn      = var.service_role_arn
 

@@ -21,16 +21,25 @@
   debug:
     msg: "Apply environment specific my.cnf configuration here."
 
-- name: Ensure MySQL is enabled and started
+- name: Ensure MySQL is running and enabled (dev/uat)
   systemd:
     name: mysql
     state: started
     enabled: yes
+  when: lookup('env', 'START_MYSQL_SERVER') | default('false', true) | bool
+
+- name: Ensure MySQL is stopped and disabled (preprod/prod)
+  systemd:
+    name: mysql
+    state: stopped
+    enabled: no
+  when: not (lookup('env', 'START_MYSQL_SERVER') | default('false', true) | bool)
 
 - name: Verify MySQL Server is running
   command: systemctl is-active mysql
   register: mysqld_status
   changed_when: false
+  failed_when: false
 
 - name: Display MySQL Server verification result
   debug:

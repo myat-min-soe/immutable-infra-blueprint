@@ -1,0 +1,15 @@
+components:
+  ansible:
+    provisioning:
+      env:
+        # START_MYSQL_SERVER controls whether the MySQL service is started/enabled.
+        # "false" by default — preprod/prod use AWS RDS, not a local MySQL server.
+        # Overridden to "true" in dev/uat stacks.
+        START_MYSQL_SERVER: "false"
+        ANSIBLE_HOST_KEY_CHECKING: "false"
+        ANSIBLE_FORCE_COLOR: "true"
+        AWS_REGION: "ap-southeast-1"
+      settings:
+        ansible:
+          playbook: site.yml
+          inventory: inventory/aws_ec2.yml

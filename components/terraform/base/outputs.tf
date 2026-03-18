@@ -26,7 +26,7 @@ output "alb_zone_id" {
 
 output "app_common_security_group_id" {
   description = "ID of the App common security group"
-  value       = module.security.app_security_group_id
+  value       = module.app_security_group.app_security_group_id
 }
 
 output "https_listener_arn" {
